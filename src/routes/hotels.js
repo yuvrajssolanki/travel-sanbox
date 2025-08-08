@@ -2,6 +2,7 @@ const express = require('express');
 const dayjs = require('dayjs');
 const { createSeededRng } = require('../lib/random');
 const { priceHotelNight } = require('../lib/pricing');
+const { convertBreakdownUSDToCurrency } = require('../lib/currency');
 
 const router = express.Router();
 
@@ -28,9 +29,12 @@ router.get('/', (req, res) => {
   const rng = createSeededRng(config.seed);
   const response = paged.map((h, idx) => {
     const seedFactor = (rng() + (idx % 11) * 0.01) % 1;
-    const perNight = priceHotelNight({ base: config.base.hotel, now, occupancyRatio: h.occupancyRatio, seedFactor });
+    let perNight = priceHotelNight({ base: config.base.hotel, now, occupancyRatio: h.occupancyRatio, seedFactor });
+    if (config.currency?.code === 'INR') {
+      perNight = convertBreakdownUSDToCurrency(perNight, config.currency.usdToInr || 83);
+    }
     const total = { ...perNight, total: Math.round(perNight.total * nights * 100) / 100 };
-    return { ...h, pricing: { perNight, total }, adults: Number(adults), nights };
+    return { ...h, pricing: { perNight, total }, currency: config.currency?.code || 'USD', currencySymbol: config.currency?.symbol || '$', adults: Number(adults), nights };
   });
 
   res.json({ total: items.length, page: p, pageSize: ps, results: response });

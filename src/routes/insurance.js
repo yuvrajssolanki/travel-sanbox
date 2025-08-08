@@ -2,6 +2,7 @@ const express = require('express');
 const dayjs = require('dayjs');
 const { createSeededRng } = require('../lib/random');
 const { pricePerDay } = require('../lib/pricing');
+const { convertBreakdownUSDToCurrency } = require('../lib/currency');
 
 const router = express.Router();
 
@@ -23,9 +24,12 @@ router.get('/', (req, res) => {
   const rng = createSeededRng(config.seed);
   const results = items.map((p, idx) => {
     const seedFactor = (rng() + (idx % 9) * 0.01) % 1;
-    const perDay = pricePerDay({ base: config.base.insuranceDay || config.base.insurance, now, seedFactor });
+    let perDay = pricePerDay({ base: config.base.insuranceDay || config.base.insurance, now, seedFactor });
+    if (config.currency?.code === 'INR') {
+      perDay = convertBreakdownUSDToCurrency(perDay, config.currency.usdToInr || 83);
+    }
     const total = Math.round(perDay.total * days * Number(travellers) * 100) / 100;
-    return { ...p, days, travellers: Number(travellers), pricing: { perDay, total } };
+    return { ...p, days, travellers: Number(travellers), pricing: { perDay, total }, currency: config.currency?.code || 'USD', currencySymbol: config.currency?.symbol || '$' };
   });
 
   res.json({ total: results.length, results });

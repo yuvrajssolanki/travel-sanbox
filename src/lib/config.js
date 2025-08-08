@@ -1,13 +1,16 @@
 const DEFAULTS = {
   SEED: 'travel-sandbox-seed',
-  NUM_FLIGHTS: 500,
-  NUM_HOTELS: 300,
+  NUM_FLIGHTS: 1500,
+  NUM_HOTELS: 1200,
   NUM_INSURANCE: 20,
   NUM_ESIMS: 60,
   BASE_FLIGHT_PRICE: 120,
-  BASE_HOTEL_NIGHT: 60,
+  BASE_HOTEL_NIGHT: 75,
   BASE_INSURANCE_DAY: 2.5,
   BASE_ESIM_DAY: 1.2,
+  CURRENCY_CODE: 'INR',
+  CURRENCY_SYMBOL: '\u20B9',
+  USD_TO_INR: 83,
 };
 
 function toInt(value, fallback) {
@@ -34,6 +37,11 @@ function loadConfig() {
       hotel: toFloat(process.env.BASE_HOTEL_NIGHT, DEFAULTS.BASE_HOTEL_NIGHT),
       insurance: toFloat(process.env.BASE_INSURANCE_DAY, DEFAULTS.BASE_INSURANCE_DAY),
       esim: toFloat(process.env.BASE_ESIM_DAY, DEFAULTS.BASE_ESIM_DAY),
+    },
+    currency: {
+      code: process.env.CURRENCY_CODE || DEFAULTS.CURRENCY_CODE,
+      symbol: process.env.CURRENCY_SYMBOL || DEFAULTS.CURRENCY_SYMBOL,
+      usdToInr: toFloat(process.env.USD_TO_INR, DEFAULTS.USD_TO_INR),
     },
   };
 }

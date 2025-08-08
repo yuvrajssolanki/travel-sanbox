@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Travel Sandbox UI</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 20px; }
+      header { display: flex; align-items: baseline; gap: 12px; }
+      h1 { font-size: 20px; margin: 0; }
+      .row { display: flex; gap: 8px; margin: 8px 0; flex-wrap: wrap; }
+      input, select, button { padding: 6px 8px; font-size: 14px; }
+      code { background: #f4f4f4; padding: 2px 6px; border-radius: 4px; }
+      pre { background: #0b1021; color: #e6e6e6; padding: 12px; border-radius: 6px; overflow: auto; }
+      .card { border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px; margin: 10px 0; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+      .label { color: #666; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Travel Sandbox UI</h1>
+      <span class="label">Base:</span>
+      <code id="base"></code>
+      <button id="healthBtn">Health</button>
+    </header>
+
+    <section>
+      <h3>Flights</h3>
+      <div class="row">
+        <input id="f-origin" placeholder="origin (e.g. IN)" />
+        <input id="f-dest" placeholder="destination (e.g. UAE)" />
+        <input id="f-date" type="date" />
+        <input id="f-flex" type="number" min="0" value="3" placeholder="flexDays" />
+        <input id="f-page" type="number" min="1" value="1" />
+        <input id="f-size" type="number" min="1" max="100" value="5" />
+        <button id="f-search">Search Flights</button>
+      </div>
+      <div id="f-out" class="grid"></div>
+    </section>
+
+    <section>
+      <h3>Hotels</h3>
+      <div class="row">
+        <input id="h-city" placeholder="city (e.g. Dubai)" />
+        <input id="h-in" type="date" />
+        <input id="h-out" type="date" />
+        <input id="h-page" type="number" min="1" value="1" />
+        <input id="h-size" type="number" min="1" max="100" value="5" />
+        <button id="h-search">Search Hotels</button>
+      </div>
+      <div id="h-out" class="grid"></div>
+    </section>
+
+    <script>
+      const BASE = location.origin;
+      document.getElementById('base').textContent = BASE;
+
+      function el(tag, attrs = {}, children = []) {
+        const e = document.createElement(tag);
+        Object.entries(attrs).forEach(([k,v]) => e.setAttribute(k, v));
+        (Array.isArray(children) ? children : [children]).forEach(c => {
+          if (typeof c === 'string') e.appendChild(document.createTextNode(c));
+          else if (c) e.appendChild(c);
+        });
+        return e;
+      }
+
+      document.getElementById('healthBtn').onclick = async () => {
+        const r = await fetch(`${BASE}/health`); const j = await r.json();
+        alert(`Health: ${j.status}`);
+      };
+
+      document.getElementById('f-search').onclick = async () => {
+        const origin = document.getElementById('f-origin').value || 'IN';
+        const dest = document.getElementById('f-dest').value || 'UAE';
+        const date = document.getElementById('f-date').value || new Date().toISOString().slice(0,10);
+        const flex = document.getElementById('f-flex').value || '3';
+        const page = document.getElementById('f-page').value || '1';
+        const size = document.getElementById('f-size').value || '5';
+        const url = `${BASE}/flights?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&date=${date}&flexDays=${flex}&page=${page}&pageSize=${size}`;
+        const r = await fetch(url);
+        const j = await r.json();
+        const out = document.getElementById('f-out');
+        out.innerHTML = '';
+        j.results.forEach(f => {
+          out.appendChild(el('div', { class: 'card' }, [
+            el('div', {}, `${f.airline}${f.flightNumber} ${f.origin}→${f.destination} (${f.durationMin}m, stops:${f.stops})`),
+            el('div', { class: 'label' }, `${new Date(f.departure).toLocaleString()} → ${new Date(f.arrival).toLocaleString()}`),
+            el('div', {}, `Cabin: ${f.cabin}, Load: ${(f.loadFactor*100).toFixed(0)}%`),
+            el('div', {}, `Total: $${f.pricing.total}`),
+          ]));
+        });
+      };
+
+      document.getElementById('h-search').onclick = async () => {
+        const city = document.getElementById('h-city').value || 'Dubai';
+        const checkIn = document.getElementById('h-in').value || new Date().toISOString().slice(0,10);
+        const checkOut = document.getElementById('h-out').value || new Date(Date.now()+2*86400000).toISOString().slice(0,10);
+        const page = document.getElementById('h-page').value || '1';
+        const size = document.getElementById('h-size').value || '5';
+        const url = `${BASE}/hotels?city=${encodeURIComponent(city)}&checkIn=${checkIn}&checkOut=${checkOut}&page=${page}&pageSize=${size}`;
+        const r = await fetch(url);
+        const j = await r.json();
+        const out = document.getElementById('h-out');
+        out.innerHTML = '';
+        j.results.forEach(h => {
+          out.appendChild(el('div', { class: 'card' }, [
+            el('div', {}, `${h.name} (${h.stars}★) — ${h.city}`),
+            el('div', { class: 'label' }, `Rooms: ${h.totalRooms}, Occ: ${(h.occupancyRatio*100).toFixed(0)}%`),
+            el('div', {}, `Per night: $${h.pricing.perNight.total}, Total: $${h.pricing.total.total}`),
+          ]));
+        });
+      };
+    </script>
+  </body>
+  </html>
+
+

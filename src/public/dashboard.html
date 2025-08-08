@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Travel Sandbox Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+      :root { --bg:#0b1020; --card:#111833; --muted:#9aa4b2; --text:#e6edf3; --accent:#5b8cff; }
+      *{box-sizing:border-box}
+      body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial;background:var(--bg);color:var(--text)}
+      header{padding:20px 24px;border-bottom:1px solid #1d264d;display:flex;align-items:center;gap:12px}
+      header h1{font-size:18px;margin:0}
+      .container{padding:20px;display:grid;gap:24px}
+      .controls{display:flex;flex-wrap:wrap;gap:8px}
+      .card{background:var(--card);border:1px solid #1d264d;border-radius:12px;padding:16px}
+      .card h2{font-size:16px;margin:0 0 12px}
+      input,select,button{background:#0c1330;border:1px solid #233064;color:var(--text);border-radius:8px;padding:8px 10px}
+      button{cursor:pointer;background:var(--accent);border-color:transparent}
+      table{width:100%;border-collapse:collapse;font-size:12px}
+      th,td{border-bottom:1px solid #1d264d;padding:8px;text-align:left;vertical-align:top}
+      th{color:var(--muted);font-weight:600}
+      .muted{color:var(--muted)}
+      .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+      .grid-1{display:grid;grid-template-columns:1fr;gap:16px}
+      @media (max-width: 1100px){.grid-2{grid-template-columns:1fr}}
+      .pagination{display:flex;gap:8px;align-items:center;margin-top:8px}
+      .pill{display:inline-block;padding:2px 6px;border-radius:999px;background:#0c1330;border:1px solid #233064;color:#c7d2fe}
+      .nowrap{white-space:nowrap}
+      .row{display:flex;gap:8px;align-items:center}
+      .spacer{flex:1}
+      a{color:#9ab2ff}
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Travel Sandbox Dashboard</h1>
+      <span class="muted">Realtime dynamic pricing; refresh across minute to see swings</span>
+      <span class="spacer"></span>
+      <a href="/version" target="_blank">API Version</a>
+      <a href="/config" target="_blank">Config</a>
+    </header>
+
+    <div class="container">
+      <div class="grid-2">
+        <div class="card" id="flights-card">
+          <h2>Flights</h2>
+          <div class="controls">
+            <input id="f-origin" placeholder="Origin (e.g. DEL, LON)"/>
+            <input id="f-destination" placeholder="Destination (e.g. NYC)"/>
+            <input id="f-date" type="date" />
+            <input id="f-flex" type="number" min="0" value="0" style="width:100px" title="Flex days"/>
+            <select id="f-cabin">
+              <option value="">Any cabin</option>
+              <option>ECONOMY</option>
+              <option>PREMIUM_ECONOMY</option>
+              <option>BUSINESS</option>
+              <option>FIRST</option>
+            </select>
+            <button id="f-load">Load</button>
+          </div>
+          <div class="row muted" style="margin-top:8px"><span id="f-meta"></span><span class="spacer"></span><span id="f-page-meta"></span></div>
+          <div style="overflow:auto; max-height: 38vh; margin-top:8px">
+            <table id="f-table">
+              <thead>
+                <tr>
+                  <th>Airline</th>
+                  <th>Flight No.</th>
+                  <th>Aircraft</th>
+                  <th>From</th>
+                  <th>To</th>
+                  <th class="nowrap">Departure</th>
+                  <th class="nowrap">Arrival</th>
+                  <th>Duration</th>
+                  <th>Layovers</th>
+                  <th>Fare Class</th>
+                  <th>Refundable</th>
+                  <th>Baggage</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <button id="f-prev">Prev</button>
+            <span id="f-page-info" class="muted"></span>
+            <button id="f-next">Next</button>
+          </div>
+        </div>
+
+        <div class="card" id="hotels-card">
+          <h2>Hotels</h2>
+          <div class="controls">
+            <input id="h-city" placeholder="City (e.g. Vienna, Delhi)"/>
+            <input id="h-checkin" type="date" />
+            <input id="h-checkout" type="date" />
+            <button id="h-load">Load</button>
+          </div>
+          <div class="row muted" style="margin-top:8px"><span id="h-meta"></span></div>
+          <div style="overflow:auto; max-height: 38vh; margin-top:8px">
+            <table id="h-table">
+              <thead>
+                <tr>
+                  <th>Name</th><th>City</th><th>Stars</th><th>Occupancy</th><th class="nowrap">Per Night</th><th class="nowrap">Total</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-1">
+        <div class="card">
+          <h2>Insurance</h2>
+          <div class="controls">
+            <input id="i-country" placeholder="Country (optional)"/>
+            <input id="i-start" type="date"/>
+            <input id="i-end" type="date"/>
+            <input id="i-travellers" type="number" min="1" value="1" style="width:100px"/>
+            <button id="i-load">Load</button>
+          </div>
+          <div style="overflow:auto; max-height: 30vh; margin-top:8px">
+            <table id="i-table">
+              <thead>
+                <tr>
+                  <th>Provider</th><th>Coverage</th><th>Country</th><th>Per Day</th><th>Total</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>eSIMs</h2>
+          <div class="controls">
+            <input id="e-country" placeholder="Country"/>
+            <input id="e-region" placeholder="Region"/>
+            <input id="e-days" type="number" min="1" value="7" style="width:100px"/>
+            <button id="e-load">Load</button>
+          </div>
+          <div style="overflow:auto; max-height: 30vh; margin-top:8px">
+            <table id="e-table">
+              <thead>
+                <tr>
+                  <th>Vendor</th><th>Coverage</th><th>Data (GB)</th><th>Validity</th><th>Per Day</th><th>Total</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      async function json(url){
+        const r = await fetch(url);
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        return r.json();
+      }
+
+      // Flights
+      let fPage=1, fPageSize=20, fTotal=0;
+      async function loadFlights(){
+        const o = document.getElementById('f-origin').value.trim();
+        const d = document.getElementById('f-destination').value.trim();
+        const date = document.getElementById('f-date').value;
+        const flex = document.getElementById('f-flex').value || 0;
+        const cabin = document.getElementById('f-cabin').value;
+        const params = new URLSearchParams({ page: String(fPage), pageSize: String(fPageSize) });
+        if(o) params.set('origin', o);
+        if(d) params.set('destination', d);
+        if(date) params.set('date', date);
+        if(flex) params.set('flexDays', flex);
+        if(cabin) params.set('cabin', cabin);
+        const data = await json('/flights?'+params.toString());
+        fTotal = data.total; document.getElementById('f-page-info').textContent = `Page ${data.page} / ~${Math.ceil(fTotal/fPageSize)}`;
+        document.getElementById('f-page-meta').textContent = `Total: ${fTotal}${data.synthetic ? ' (synthetic)' : ''}`;
+        const tbody = document.querySelector('#f-table tbody');
+        tbody.innerHTML = data.results.map(r=>{
+          const dep = new Date(r.departure_time || r.departure).toLocaleString();
+          const arr = new Date(r.arrival_time || r.arrival).toLocaleString();
+          const price = r.price ?? r.pricing?.total ?? '-';
+          const from = `${r.from_city || r.origin} — ${r.from_airport || r.origin}`;
+          const to = `${r.to_city || r.destination} — ${r.to_airport || r.destination}`;
+          const lay = Array.isArray(r.layovers) && r.layovers.length ? r.layovers.join(', ') : '-';
+          return `<tr>
+            <td>${r.airline_name || r.airline}</td>
+            <td>${r.flight_number || r.flightNumber}</td>
+            <td>${r.aircraft_type || '-'}</td>
+            <td>${from}</td>
+            <td>${to}</td>
+            <td class="nowrap">${dep}</td>
+            <td class="nowrap">${arr}</td>
+            <td>${r.duration || (Math.floor((r.durationMin||0)/60)+'h '+((r.durationMin||0)%60)+'m')}</td>
+            <td>${lay}</td>
+            <td>${r.fare_class || r.cabin}</td>
+            <td>${(r.refundable===false)?'No':'Yes'}</td>
+            <td>${r.baggage_included || '-'}</td>
+            <td>${r.currencySymbol || '$'} ${price}</td>
+          </tr>`
+        }).join('');
+      }
+      document.getElementById('f-load').onclick = ()=>{ fPage=1; loadFlights(); };
+      document.getElementById('f-prev').onclick = ()=>{ if(fPage>1){ fPage-=1; loadFlights(); }};
+      document.getElementById('f-next').onclick = ()=>{ const max = Math.max(1, Math.ceil(fTotal/fPageSize)); if(fPage<max){ fPage+=1; loadFlights(); }};
+
+      // Hotels
+      async function loadHotels(){
+        const c = document.getElementById('h-city').value.trim();
+        const ci = document.getElementById('h-checkin').value;
+        const co = document.getElementById('h-checkout').value;
+        const params = new URLSearchParams();
+        if(c) params.set('city', c);
+        if(ci) params.set('checkIn', ci);
+        if(co) params.set('checkOut', co);
+        const data = await json('/hotels?'+params.toString());
+        document.getElementById('h-meta').textContent = `Total: ${data.total}, Nights: ${data.results[0]?.nights ?? '-'}`;
+        const tbody = document.querySelector('#h-table tbody');
+        tbody.innerHTML = data.results.map(r=>{
+          const pn = r.pricing?.perNight?.total ?? '-';
+          const t = r.pricing?.total?.total ?? '-';
+          return `<tr>
+            <td>${r.name}</td>
+            <td>${r.city}</td>
+            <td>${r.stars}</td>
+            <td>${(r.occupancyRatio*100).toFixed(0)}%</td>
+            <td>${r.currencySymbol || '$'} ${pn}</td>
+            <td>${r.currencySymbol || '$'} ${t}</td>
+          </tr>`
+        }).join('');
+      }
+      document.getElementById('h-load').onclick = ()=> loadHotels();
+
+      // Insurance
+      async function loadInsurance(){
+        const c = document.getElementById('i-country').value.trim();
+        const s = document.getElementById('i-start').value;
+        const e = document.getElementById('i-end').value;
+        const t = document.getElementById('i-travellers').value || '1';
+        const params = new URLSearchParams({ travellers: t });
+        if(c) params.set('country', c);
+        if(s) params.set('startDate', s);
+        if(e) params.set('endDate', e);
+        const data = await json('/insurance?'+params.toString());
+        const tbody = document.querySelector('#i-table tbody');
+        tbody.innerHTML = data.results.map(r=>{
+          const coverage = r.coverage;
+          return `<tr>
+            <td>${r.provider}</td>
+            <td>${coverage}</td>
+            <td>${r.country}</td>
+            <td>${r.currencySymbol || '$'} ${r.pricing?.perDay?.total ?? '-'}</td>
+            <td>${r.currencySymbol || '$'} ${r.pricing?.total ?? '-'}</td>
+          </tr>`
+        }).join('');
+      }
+      document.getElementById('i-load').onclick = ()=> loadInsurance();
+
+      // eSIMs
+      async function loadEsims(){
+        const c = document.getElementById('e-country').value.trim();
+        const r = document.getElementById('e-region').value.trim();
+        const d = document.getElementById('e-days').value || '7';
+        const params = new URLSearchParams({ days: d });
+        if(c) params.set('country', c);
+        if(r) params.set('region', r);
+        const data = await json('/esims?'+params.toString());
+        const tbody = document.querySelector('#e-table tbody');
+        tbody.innerHTML = data.results.map(x=>{
+          const cov = x.coverage.country ? x.coverage.country : x.coverage.region;
+          return `<tr>
+            <td>${x.vendor}</td>
+            <td>${cov}</td>
+            <td>${x.dataGb}</td>
+            <td>${x.validityDays} days</td>
+            <td>${x.currencySymbol || '$'} ${x.pricing?.perDay?.total ?? '-'}</td>
+            <td>${x.currencySymbol || '$'} ${x.pricing?.total ?? '-'}</td>
+          </tr>`
+        }).join('');
+      }
+      document.getElementById('e-load').onclick = ()=> loadEsims();
+
+      // Initial loads
+      loadFlights();
+      loadHotels();
+      loadInsurance();
+      loadEsims();
+
+      // Auto-refresh tables on minute to visualize volatility multiplier
+      setInterval(()=>{
+        loadFlights();
+        loadHotels();
+      }, 60000);
+    </script>
+  </body>
+  </html>
+
+

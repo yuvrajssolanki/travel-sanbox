@@ -4,6 +4,13 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
+// Minute-based high-volatility multiplier for dynamic pricing swings.
+// Even minute: +50% (1.5x), Odd minute: down to 40% (0.4x)
+function volatilityMultiplier(now) {
+  const minute = now.minute();
+  return (minute % 2 === 0) ? 1.5 : 0.4;
+}
+
 function surgeMultiplier(now, seedFactor = 0.0) {
   const hour = now.hour();
   const weekday = now.day();
@@ -45,12 +52,12 @@ function round(n) {
 }
 
 function priceFlight({ base, now, travelDate, loadFactor, seedFactor }) {
-  const m = surgeMultiplier(now, seedFactor) * proximityMultiplier(travelDate, now) * occupancyMultiplier(loadFactor);
+  const m = volatilityMultiplier(now) * surgeMultiplier(now, seedFactor) * proximityMultiplier(travelDate, now) * occupancyMultiplier(loadFactor);
   return applyFeesAndTaxes(base * m);
 }
 
 function priceHotelNight({ base, now, occupancyRatio, seedFactor }) {
-  const m = surgeMultiplier(now, seedFactor) * occupancyMultiplier(occupancyRatio);
+  const m = volatilityMultiplier(now) * surgeMultiplier(now, seedFactor) * occupancyMultiplier(occupancyRatio);
   return applyFeesAndTaxes(base * m, 0.05, 0.1);
 }
 

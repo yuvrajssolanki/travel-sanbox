@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dayjs = require('dayjs');
+const path = require('path');
 
 const { loadConfig } = require('./lib/config');
 const { generateData } = require('./lib/generate');
@@ -13,6 +14,10 @@ const configRouter = require('./routes/config');
 const app = express();
 app.use(cors());
 app.use(express.json());
+// Serve minimal UI and dashboard
+app.use('/ui', express.static('public'));
+app.use('/ui', express.static('src/public'));
+app.use('/static', express.static(require('path').join(__dirname, 'public')));
 
 const config = loadConfig();
 const db = generateData(config);
@@ -52,6 +57,11 @@ app.use('/hotels', hotelsRouter);
 app.use('/insurance', insuranceRouter);
 app.use('/esims', esimsRouter);
 app.use('/config', configRouter);
+
+// Simple dashboard UI
+app.get('/dashboard', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
 
 const port = process.env.PORT || 8080;
 app.listen(port, () => {
