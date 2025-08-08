@@ -1,6 +1,6 @@
 const { createSeededRng, choice, intInRange, floatInRange, shuffle } = require('./random');
 const dayjs = require('dayjs');
-const { nanoid } = require('nanoid');
+const { generateId } = require('./id');
 
 const AIRPORTS = [
   // UK / Europe
@@ -99,7 +99,7 @@ function generateFlights(rng, count) {
     const loadFactor = sold / seats;
     const stops = intInRange(rng, 0, 2);
     flights.push({
-      id: nanoid(10), airline, flightNumber, origin: from.code, destination: to.code,
+      id: generateId(10), airline, flightNumber, origin: from.code, destination: to.code,
       departure, arrival, durationMin, cabin, seats, sold, loadFactor, stops,
     });
   }
@@ -116,7 +116,7 @@ function generateHotels(rng, count) {
     const occupied = intInRange(rng, 5, Math.floor(totalRooms * 0.9));
     const occupancyRatio = occupied / totalRooms;
     const name = `${chain} ${city} ${intInRange(rng, 1, 99)}`;
-    hotels.push({ id: nanoid(10), name, city, stars, totalRooms, occupied, occupancyRatio });
+    hotels.push({ id: generateId(10), name, city, stars, totalRooms, occupied, occupancyRatio });
   }
   return hotels;
 }
@@ -128,7 +128,7 @@ function generateInsurancePlans(rng, count) {
     const provider = choice(rng, providers);
     const coverage = choice(rng, ['Basic', 'Standard', 'Premium']);
     const country = choice(rng, COUNTRIES);
-    plans.push({ id: nanoid(10), provider, coverage, country, maxCoverageUSD: intInRange(rng, 10000, 100000) });
+    plans.push({ id: generateId(10), provider, coverage, country, maxCoverageUSD: intInRange(rng, 10000, 100000) });
   }
   return plans;
 }
@@ -141,7 +141,7 @@ function generateEsims(rng, count) {
     const coverage = rng() < 0.6 ? { country: choice(rng, COUNTRIES) } : { region: choice(rng, REGIONS) };
     const dataGb = intInRange(rng, 1, 50);
     const validityDays = intInRange(rng, 3, 90);
-    esims.push({ id: nanoid(10), vendor, dataGb, validityDays, coverage });
+    esims.push({ id: generateId(10), vendor, dataGb, validityDays, coverage });
   }
   return esims;
 }
